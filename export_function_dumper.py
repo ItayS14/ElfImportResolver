@@ -4,12 +4,14 @@ import argparse
 from collections import defaultdict
 import os
 
+
 class ElfFile:
-    def __init__(self, file_path):
-        self.file_path = file_path
-        self._binary = lief.parse(self.file_path)
+    def __init__(self, file_path, rel_path):
+        self._file_path = file_path
+        self._binary = lief.parse(self._file_path)
+        self.rel_path = rel_path
         if self._binary is None:
-            raise Exception(f"Invalid ElfFile {self.file_path}")
+            raise Exception(f"Invalid ElfFile {self.rel_path}")
 
     @property
     def exported_functions(self):
@@ -27,19 +29,19 @@ def elf_files_generator(root_directory):
     for root, _, files in os.walk(root_directory):
         for file in files:
             try:
-                yield ElfFile(os.path.join(root, file))
+                yield ElfFile(os.path.join(root, file), os.path.join(root.split(root_directory)[1][1:], file))
             except Exception as e:
-                print (e) 
+                print(e) 
 
 def create_exported_mapping_dict(base_directory):
     exported_mapping_dict = defaultdict(lambda : [])
 
     for elf_file in elf_files_generator(base_directory):
-        print (f'Parsing: {elf_file.file_path}')
+        print(f'Parsing: {elf_file.rel_path}')
         for exported_function in elf_file.exported_functions:
             machine_type = elf_file.machine_type
             exported_mapping_dict[exported_function].append({
-                "path": elf_file.file_path,
+                "path": elf_file.rel_path,
                 "arch": machine_type
             }) 
 
