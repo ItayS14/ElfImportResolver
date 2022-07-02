@@ -7,8 +7,7 @@ import os
 
 class ElfFile:
     def __init__(self, file_path, rel_path):
-        self._file_path = file_path
-        self._binary = lief.parse(self._file_path)
+        self._binary = lief.parse(file_path)
         self.rel_path = rel_path
         if self._binary is None:
             raise Exception(f"Invalid ElfFile {self.rel_path}")
@@ -29,12 +28,14 @@ def elf_files_generator(root_directory):
     for root, _, files in os.walk(root_directory):
         for file in files:
             try:
-                yield ElfFile(os.path.join(root, file), os.path.join(root.split(root_directory)[1][1:], file))
+                file_path = os.path.join(root, file)
+                rel_file_path = os.path.relpath(file_path, root_directory)
+                yield ElfFile(file_path, rel_file_path) 
             except Exception as e:
                 print(e) 
 
 def create_exported_mapping_dict(base_directory):
-    exported_mapping_dict = defaultdict(lambda : [])
+    exported_mapping_dict = defaultdict(list)
 
     for elf_file in elf_files_generator(base_directory):
         print(f'Parsing: {elf_file.rel_path}')
